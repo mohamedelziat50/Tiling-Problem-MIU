@@ -143,6 +143,102 @@ vector<vector<Domino>> generateBoundaryTilings(int startR, int endR, int startC,
     return boundaryTilings;
 }
 
+// Check if a tiling is valid (no overlaps, all cells covered)
+bool isValidTiling(const vector<Domino>& dominoes, int rows, int cols, int startR, int startC) {
+    vector<vector<bool>> covered(rows, vector<bool>(cols, false));
+    
+    for (const auto& d : dominoes) {
+        // Convert to local coordinates
+        int r1 = d.r1 - startR, c1 = d.c1 - startC;
+        int r2 = d.r2 - startR, c2 = d.c2 - startC;
+        
+        // Check bounds
+        if (r1 < 0 || r1 >= rows || c1 < 0 || c1 >= cols ||
+            r2 < 0 || r2 >= rows || c2 < 0 || c2 >= cols) {
+            return false;
+        }
+        
+        // Check if already covered
+        if (covered[r1][c1] || covered[r2][c2]) {
+            return false;
+        }
+        
+        // Check if domino is valid (adjacent cells)
+        if (!((r1 == r2 && abs(c1 - c2) == 1) || (c1 == c2 && abs(r1 - r2) == 1))) {
+            return false;
+        }
+        
+        covered[r1][c1] = covered[r2][c2] = true;
+    }
+    
+    // Check if all cells are covered
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (!covered[r][c]) return false;
+        }
+    }
+    
+    return true;
+}
+
+// Generate solutions for a region with some boundary cells already occupied
+vector<vector<Domino>> solveWithConstraints(int startR, int endR, int startC, int endC, 
+                                            const vector<Domino>& boundaryDominoes) {
+    vector<vector<Domino>> solutions;
+    int rows = endR - startR;
+    int cols = endC - startC;
+    
+    // Mark boundary-occupied cells
+    vector<vector<bool>> occupied(rows, vector<bool>(cols, false));
+    for (const auto& d : boundaryDominoes) {
+        // Check if domino overlaps with this region
+        if (d.r1 >= startR && d.r1 < endR && d.c1 >= startC && d.c1 < endC) {
+            occupied[d.r1 - startR][d.c1 - startC] = true;
+        }
+        if (d.r2 >= startR && d.r2 < endR && d.c2 >= startC && d.c2 < endC) {
+            occupied[d.r2 - startR][d.c2 - startC] = true;
+        }
+    }
+    
+    vector<Domino> currentSolution;
+    
+    function<void(int)> backtrack = [&](int pos) {
+        if (pos >= rows * cols) {
+            solutions.push_back(currentSolution);
+            return;
+        }
+        
+        int r = pos / cols;
+        int c = pos % cols;
+        
+        if (occupied[r][c]) {
+            backtrack(pos + 1);
+            return;
+        }
+        
+        // Try horizontal
+        if (c + 1 < cols && !occupied[r][c + 1]) {
+            occupied[r][c] = occupied[r][c + 1] = true;
+            currentSolution.push_back({startR + r, startC + c, startR + r, startC + c + 1});
+            backtrack(pos + 1);
+            currentSolution.pop_back();
+            occupied[r][c] = occupied[r][c + 1] = false;
+        }
+        
+        // Try vertical
+        if (r + 1 < rows && !occupied[r + 1][c]) {
+            occupied[r][c] = occupied[r + 1][c] = true;
+            currentSolution.push_back({startR + r, startC + c, startR + r + 1, startC + c});
+            backtrack(pos + 1);
+            currentSolution.pop_back();
+            occupied[r][c] = occupied[r + 1][c] = false;
+        }
+    };
+    
+    backtrack(0);
+    return solutions;
+}
+
 // Divide and Conquer approach to solve tiling
 vector<vector<Domino>> divideAndConquer(int startR, int endR, int startC, int endC) {
     vector<vector<Domino>> solutions;
@@ -152,45 +248,7 @@ vector<vector<Domino>> divideAndConquer(int startR, int endR, int startC, int en
     int cols = endC - startC;
     
     if (rows * cols <= 4) {
-        // Solve small region with backtracking
-        vector<Domino> currentSolution;
-        vector<vector<bool>> localGrid(rows, vector<bool>(cols, false));
-        
-        function<void(int)> backtrack = [&](int pos) {
-            if (pos >= rows * cols) {
-                solutions.push_back(currentSolution);
-                return;
-            }
-            
-            int r = pos / cols;
-            int c = pos % cols;
-            
-            if (localGrid[r][c]) {
-                backtrack(pos + 1);
-                return;
-            }
-            
-            // Try horizontal
-            if (c + 1 < cols && !localGrid[r][c + 1]) {
-                localGrid[r][c] = localGrid[r][c + 1] = true;
-                currentSolution.push_back({startR + r, startC + c, startR + r, startC + c + 1});
-                backtrack(pos + 1);
-                currentSolution.pop_back();
-                localGrid[r][c] = localGrid[r][c + 1] = false;
-            }
-            
-            // Try vertical
-            if (r + 1 < rows && !localGrid[r + 1][c]) {
-                localGrid[r][c] = localGrid[r + 1][c] = true;
-                currentSolution.push_back({startR + r, startC + c, startR + r + 1, startC + c});
-                backtrack(pos + 1);
-                currentSolution.pop_back();
-                localGrid[r][c] = localGrid[r + 1][c] = false;
-            }
-        };
-        
-        backtrack(0);
-        return solutions;
+        return solveWithConstraints(startR, endR, startC, endC, {});
     }
     
     // Divide: choose split point
@@ -198,37 +256,49 @@ vector<vector<Domino>> divideAndConquer(int startR, int endR, int startC, int en
     int splitR = startR + rows / 2;
     int splitC = startC + cols / 2;
     
+    auto boundarySolutions = generateBoundaryTilings(startR, endR, startC, endC, splitR, splitC, splitVertically);
+    
     if (splitVertically) {
         // Split vertically
-        auto leftSolutions = divideAndConquer(startR, endR, startC, splitC);
-        auto rightSolutions = divideAndConquer(startR, endR, splitC, endC);
-        auto boundarySolutions = generateBoundaryTilings(startR, endR, startC, endC, splitR, splitC, true);
-        
-        // Combine solutions
-        for (const auto& left : leftSolutions) {
-            for (const auto& right : rightSolutions) {
-                for (const auto& boundary : boundarySolutions) {
-                    vector<Domino> combined = left;
+        for (const auto& boundary : boundarySolutions) {
+            // Solve left region with boundary constraints
+            auto leftSolutions = solveWithConstraints(startR, endR, startC, splitC, boundary);
+            // Solve right region with boundary constraints  
+            auto rightSolutions = solveWithConstraints(startR, endR, splitC, endC, boundary);
+            
+            // Combine valid solutions
+            for (const auto& left : leftSolutions) {
+                for (const auto& right : rightSolutions) {
+                    vector<Domino> combined = boundary;
+                    combined.insert(combined.end(), left.begin(), left.end());
                     combined.insert(combined.end(), right.begin(), right.end());
-                    combined.insert(combined.end(), boundary.begin(), boundary.end());
-                    solutions.push_back(combined);
+                    
+                    // Validate the complete solution
+                    if (isValidTiling(combined, rows, cols, startR, startC)) {
+                        solutions.push_back(combined);
+                    }
                 }
             }
         }
     } else {
         // Split horizontally
-        auto topSolutions = divideAndConquer(startR, splitR, startC, endC);
-        auto bottomSolutions = divideAndConquer(splitR, endR, startC, endC);
-        auto boundarySolutions = generateBoundaryTilings(startR, endR, startC, endC, splitR, splitC, false);
-        
-        // Combine solutions
-        for (const auto& top : topSolutions) {
-            for (const auto& bottom : bottomSolutions) {
-                for (const auto& boundary : boundarySolutions) {
-                    vector<Domino> combined = top;
+        for (const auto& boundary : boundarySolutions) {
+            // Solve top region with boundary constraints
+            auto topSolutions = solveWithConstraints(startR, splitR, startC, endC, boundary);
+            // Solve bottom region with boundary constraints
+            auto bottomSolutions = solveWithConstraints(splitR, endR, startC, endC, boundary);
+            
+            // Combine valid solutions
+            for (const auto& top : topSolutions) {
+                for (const auto& bottom : bottomSolutions) {
+                    vector<Domino> combined = boundary;
+                    combined.insert(combined.end(), top.begin(), top.end());
                     combined.insert(combined.end(), bottom.begin(), bottom.end());
-                    combined.insert(combined.end(), boundary.begin(), boundary.end());
-                    solutions.push_back(combined);
+                    
+                    // Validate the complete solution
+                    if (isValidTiling(combined, rows, cols, startR, startC)) {
+                        solutions.push_back(combined);
+                    }
                 }
             }
         }
