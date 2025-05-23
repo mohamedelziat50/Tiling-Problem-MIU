@@ -8,69 +8,126 @@ struct Domino {
     int r1, c1, r2, c2;
 };
 
-int N, M;
-long long totalTilings = 0;
-vector<vector<bool>> grid;
+class DominoTiler {
+private:
+    int N, M;
+    long long totalTilings = 0;
+    vector<vector<bool>> grid;
 
-// This function uses traditional Divide & Conquer
-// For a 2xN grid, number of ways to tile is:
-//   F(n) = F(n-1) + F(n-2)
-// Like the Fibonacci sequence!
-long long countTilings(int n, vector<long long>& memo) {
-    if (n == 0) return 1;  // Empty grid
-    if (n == 1) return 1;  // Only vertical dominoes
-    if (memo[n] != -1) return memo[n];
-
-    // Divide: 2x(n-1) and 2x(n-2)
-    memo[n] = countTilings(n - 1, memo) + countTilings(n - 2, memo);
-
-    return memo[n];
-}
-
-void PrintTiling(const vector<Domino>& placed) {
-    vector<vector<int>> display(N, vector<int>(M, 0)); //Empty 2D grid to fill for each cout representation
-
-    for (int i = 0; i < placed.size(); ++i) {
-        //retrive the domino as d and store id in both its coordinate cells in display
-        const auto& d = placed[i]; //fetches first placed domino
-        int id = i + 1; //id starts from 1 for human eye convenience when printing
-        display[d.r1][d.c1] = id;
-        display[d.r2][d.c2] = id;
-    }
-
-    cout << "Tiling #" << totalTilings << " (" << (N * M) / 2 << " dominoes):\n";
-    // Print column headers
-    cout << "    ";
-    for (int c = 0; c < M; ++c) cout << setw(3) << c + 1;
-    cout << "\n";
-    cout << "   +" << string(M * 3, '-') << "+\n";
-    for (int r = 0; r < N; ++r) {
-        cout << setw(2) << r + 1 << " |";
-        for (int c = 0; c < M; ++c) {
-            if (display[r][c] > 0)
-                cout << setw(3) << display[r][c];
-            else
-                cout << setw(3) << '.';
+    void printTiling(const vector<Domino>& placed) {
+        vector<vector<int>> display(N, vector<int>(M, 0));
+        
+        for (int i = 0; i < placed.size(); ++i) {
+            const auto& d = placed[i];
+            display[d.r1][d.c1] = i + 1;
+            display[d.r2][d.c2] = i + 1;
         }
-        cout << " |\n";
+
+        cout << "\nTiling #" << ++totalTilings << ":\n";
+        for (int r = 0; r < N; ++r) {
+            for (int c = 0; c < M; ++c) {
+                cout << setw(3) << (display[r][c] ? to_string(display[r][c]) : ".");
+            }
+            cout << '\n';
+        }
+        cout << '\n';
     }
-    cout << "   +" << string(M * 3, '-') << "+\n\n";
-}
+
+    bool isValidTiling(const vector<Domino>& dominoes) {
+        vector<vector<bool>> covered(N, vector<bool>(M, false));
+
+        for (const auto& d : dominoes) {
+            if (d.r1 < 0 || d.r1 >= N || d.c1 < 0 || d.c1 >= M ||
+                d.r2 < 0 || d.r2 >= N || d.c2 < 0 || d.c2 >= M ||
+                covered[d.r1][d.c1] || covered[d.r2][d.c2]) {
+                return false;
+            }
+            covered[d.r1][d.c1] = covered[d.r2][d.c2] = true;
+        }
+        
+        return true;
+    }
+
+    vector<vector<Domino>> solveRegion(int startR, int endR, int startC, int endC) {
+        vector<vector<Domino>> solutions;
+        int rows = endR - startR;
+        int cols = endC - startC;
+
+        // Base case: 2x1 or 1x2 region
+        if (rows * cols == 2) {
+            if (rows == 2) {
+                solutions.push_back({{startR, startC, startR + 1, startC}});
+            } else {
+                solutions.push_back({{startR, startC, startR, startC + 1}});
+            }
+            return solutions;
+        }
+
+        // Divide the region
+        bool splitVertically = (cols > rows);
+        int splitR = startR + rows/2;
+        int splitC = startC + cols/2;
+
+        if (splitVertically) {
+            auto leftSolutions = solveRegion(startR, endR, startC, splitC);
+            auto rightSolutions = solveRegion(startR, endR, splitC, endC);
+
+            // Combine solutions
+            for (const auto& left : leftSolutions) {
+                for (const auto& right : rightSolutions) {
+                    vector<Domino> combined = left;
+                    combined.insert(combined.end(), right.begin(), right.end());
+                    if (isValidTiling(combined)) {
+                        solutions.push_back(combined);
+                    }
+                }
+            }
+        } else {
+            auto topSolutions = solveRegion(startR, splitR, startC, endC);
+            auto bottomSolutions = solveRegion(splitR, endR, startC, endC);
+
+            // Combine solutions
+            for (const auto& top : topSolutions) {
+                for (const auto& bottom : bottomSolutions) {
+                    vector<Domino> combined = top;
+                    combined.insert(combined.end(), bottom.begin(), bottom.end());
+                    if (isValidTiling(combined)) {
+                        solutions.push_back(combined);
+                    }
+                }
+            }
+        }
+
+        return solutions;
+    }
+
+public:
+    void solve(int rows, int cols) {
+        N = rows;
+        M = cols;
+        grid.assign(N, vector<bool>(M, false));
+        
+        auto solutions = solveRegion(0, N, 0, M);
+        
+        for (const auto& solution : solutions) {
+            printTiling(solution);
+        }
+        
+        cout << "Total tilings found: " << totalTilings << '\n';
+    }
+};
 
 int main() {
-    cout << "Enter number of rows (N) and columns (M): ";
-    if (!(cin >> N >> M)) { //if inputs are not integer
-        cerr << "Invalid input. Please enter two integers.\n";
+    int N, M;
+    cout << "Enter grid dimensions (N M): ";
+    cin >> N >> M;
+
+    if ((N * M) % 2 != 0) {
+        cout << "Grid must have even number of cells.\n";
+        return 1;
     }
-    if ((N * M) % 2 != 0) { //if number of cells aren't even
-        cerr << "Error: N * M must be even to tile with dominoes.\n";
-    }
 
-    grid.assign(N, vector<bool>(M, false));
-
-    long long ways = countTilings(length, grid);
-    cout << "Number of ways to tile the grid: " << ways << "\n";
-    cout << "Each tiling uses " << (N * M) / 2 << " dominoes.\n";
-
+    DominoTiler tiler;
+    tiler.solve(N, M);
     return 0;
 }
