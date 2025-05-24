@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Domino Tiling Visualizer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .grid {
+      display: grid;
+      gap: 5px;
+      margin: 20px auto;
+      width: max-content;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background-color: #eee;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Domino Tiling Visualizer</h1>
+  <div>
+    <input type="number" id="rowsInput" placeholder="Rows" min="1">
+    <input type="number" id="colsInput" placeholder="Columns" min="1">
+    <button onclick="startVisualization()">Start</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p id="counter">Tiling count: 0</p>
+
+  <script>
+    let rows = 2;
+    let cols = 4;
+    let grid = [];
+    const gridElement = document.getElementById("grid");
+    const counterElement = document.getElementById("counter");
+    let tilingCount = 0;
+    let colorIndex = 0;
+
+    const colors = [
+      "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf",
+      "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff",
+      "#fffffc", "#d0f4de", "#fef9c3", "#fde2e4"
+    ];
+
+    function createGridDisplay() {
+      gridElement.innerHTML = "";
+      gridElement.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+      gridElement.style.gridTemplateRows = `repeat(${rows}, 60px)`;
+      grid = [];
+
+      for (let r = 0; r < rows; r++) {
+        grid[r] = [];
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.id = `cell-${r}-${c}`;
+          grid[r][c] = false;
+          gridElement.appendChild(cell);
+        }
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function placeDomino(row, col) {
+      while (row < rows && grid[row][col]) {
+        col++;
+        if (col === cols) {
+          col = 0;
+          row++;
+        }
+      }
+
+      if (row === rows) {
+        tilingCount++;
+        counterElement.textContent = `Tiling count: ${tilingCount}`;
+        await sleep(500);
+        return;
+      }
+
+      if (col + 1 < cols && !grid[row][col + 1]) {
+        grid[row][col] = grid[row][col + 1] = true;
+        const color = getNextColor();
+        highlightCells([[row, col], [row, col + 1]], true, color);
+        await sleep(300);
+        await placeDomino(row, col);
+        highlightCells([[row, col], [row, col + 1]], false);
+        grid[row][col] = grid[row][col + 1] = false;
+      }
+
+      if (row + 1 < rows && !grid[row + 1][col]) {
+        grid[row][col] = grid[row + 1][col] = true;
+        const color = getNextColor();
+        highlightCells([[row, col], [row + 1, col]], true, color);
+        await sleep(300);
+        await placeDomino(row, col);
+        highlightCells([[row, col], [row + 1, col]], false);
+        grid[row][col] = grid[row + 1][col] = false;
+      }
+    }
+
+    function getNextColor() {
+      const color = colors[colorIndex % colors.length];
+      colorIndex++;
+      return color;
+    }
+
+    function highlightCells(cells, on, color = "") {
+      for (const [r, c] of cells) {
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        if (on) {
+          cell.style.backgroundColor = color;
+        } else {
+          cell.style.backgroundColor = "#eee";
+        }
+      }
+    }
+
+    async function startVisualization() {
+      rows = parseInt(document.getElementById("rowsInput").value);
+      cols = parseInt(document.getElementById("colsInput").value);
+
+      if (isNaN(rows) || isNaN(cols) || rows <= 0 || cols <= 0) {
+        alert("Please enter valid positive integers for rows and columns.");
+        return;
+      }
+
+      if ((rows * cols) % 2 !== 0) {
+        alert("Impossible: odd number of cells!");
+        return;
+      }
+
+      tilingCount = 0;
+      colorIndex = 0;
+      counterElement.textContent = "Tiling count: 0";
+      createGridDisplay();
+      await placeDomino(0, 0);
+    }
+
+    createGridDisplay();
+  </script>
+</body>
+</html>
