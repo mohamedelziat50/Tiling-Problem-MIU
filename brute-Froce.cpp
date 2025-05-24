@@ -44,11 +44,6 @@ int main() {
     cout << "Enter columns: ";
     cin >> n;
 
-    if (2 * n % 2 != 0) {
-        cout << "Impossible: odd number of cells!\n";
-        return 0;
-    }
-
     vector<vector<bool>> grid(2, vector<bool>(n, false));
 
     placeDomino(0, 0, grid);
