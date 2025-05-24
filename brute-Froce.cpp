@@ -2,6 +2,7 @@
 #include <vector>
 using namespace std;
 
+const int ROWS = 2;
 int tilingCount = 0;
 
 // Backtracking function with tile tracking
@@ -44,7 +45,7 @@ int main() {
     cout << "Enter columns: ";
     cin >> n;
 
-    vector<vector<bool>> grid(2, vector<bool>(n, false));
+    vector<vector<bool>> grid(ROWS, vector<bool>(n, false));
 
     placeDomino(0, 0, grid);
 
