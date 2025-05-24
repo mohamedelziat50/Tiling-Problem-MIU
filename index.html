@@ -7,152 +7,62 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
-  <main class="max-w-4xl mx-auto p-6 w-full" style="top: 145px; position: relative;">
-    <h1 class="text-3xl font-bold text-center mb-6" style="bottom: 150px; position: relative;">Domino Tiling Visualizer</h1>
+  <main class="max-w-4xl mx-auto p-6 w-full relative top-36">
+    <h1 class="text-3xl font-bold text-center mb-6 relative bottom-36">Domino Tiling Visualizer</h1>
 
     <div class="flex flex-wrap gap-12 justify-center mb-4">
-      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center" />
-      <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center" />
-      <input type="number" id="speedInput" placeholder="Speed (ms)" min="10" class="border p-2 rounded w-32 text-center" />
+      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center" value="2" />
+      <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center" value="4" />
     </div>
 
     <div class="flex flex-wrap gap-2 justify-center mb-6">
       <button onclick="startVisualization()" id="startBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
-      
-      <button onclick="toggleBacktrackingPlayPause()" id="playPauseBtn" disabled
-        class="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded shadow disabled:opacity-50">
-        Pause
-      </button>
-      
-      <button onclick="toggleAutoPlayStop()" id="autoPlayStopBtn" disabled
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow disabled:opacity-50">
-        Start Auto
-      </button>
-
-      <button onclick="showPreviousTiling()" id="prevBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Previous</button>
-      <button onclick="showNextTiling()" id="nextBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Next</button>
-      
-      <button onclick="restartVisualization()" id="restartBtn" disabled class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Restart</button>
+      <button onclick="showPreviousStep()" id="prevBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Previous</button>
+      <button onclick="showNextStep()" id="nextBtn" disabled class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Next</button>
+      <button onclick="restartVisualization()" id="restartBtn" disabled class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Restart</button>
     </div>
 
     <div id="grid" class="grid gap-1 justify-center"></div>
     <p id="counter" class="text-center mt-4 font-medium">Tiling count: 0</p>
-    <p id="showing" class="text-center font-medium">Showing: -</p>
+    <p id="showingLabel" class="text-center font-medium mt-2"></p>
+    
   </main>
 
   <script>
     let rows = 2;
     let cols = 4;
     let grid = [];
-    let solutions = [];
-    let currentIndex = 0;
-
-    let isBacktracking = false;
-    let shouldPause = false;
-    let shouldStop = false;
-
-    let autoInterval = null;
-    let autoSpeed = 1000;
+    let steps = [];
+    let stepIndex = 0;
+    let colorIndex = 0;
+    let totalTilings = 0;
+    const colors = ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff"];
 
     const gridElement = document.getElementById("grid");
     const counterElement = document.getElementById("counter");
-    const showingElement = document.getElementById("showing");
-    const nextButton = document.getElementById("nextBtn");
-    const prevButton = document.getElementById("prevBtn");
-    const autoPlayStopBtn = document.getElementById("autoPlayStopBtn");
-    const playPauseBtn = document.getElementById("playPauseBtn");
-    const restartBtn = document.getElementById("restartBtn");
+    const showingLabel = document.getElementById("showingLabel");
+
     const startBtn = document.getElementById("startBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const rowsInput = document.getElementById("rowsInput");
+    const colsInput = document.getElementById("colsInput");
 
-    let colorIndex = 0;
-    const colors = [
-      "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf",
-      "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff",
-      "#fffffc", "#d0f4de", "#fef9c3", "#fde2e4"
-    ];
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    function createGridDisplay() {
+    function createGridDisplay(r, c) {
       gridElement.innerHTML = "";
-      gridElement.style.gridTemplateColumns = `repeat(${cols}, 48px)`;
-      gridElement.style.gridTemplateRows = `repeat(${rows}, 48px)`;
+      gridElement.style.gridTemplateColumns = `repeat(${c}, 48px)`;
+      gridElement.style.gridTemplateRows = `repeat(${r}, 48px)`;
       grid = [];
-
-      for (let r = 0; r < rows; r++) {
-        grid[r] = [];
-        for (let c = 0; c < cols; c++) {
+      for (let rr = 0; rr < r; rr++) {
+        grid[rr] = [];
+        for (let cc = 0; cc < c; cc++) {
           const cell = document.createElement("div");
-          cell.className = "w-12 h-12 bg-gray-200 border border-gray-400 flex items-center justify-center text-xs rounded";
-          cell.id = `cell-${r}-${c}`;
-          grid[r][c] = false;
+          cell.className = "w-12 h-12 bg-gray-200 border border-gray-400 text-xs rounded";
+          cell.id = `cell-${rr}-${cc}`;
+          grid[rr][cc] = false;
           gridElement.appendChild(cell);
         }
-      }
-    }
-
-    function cloneGrid(g) {
-      return g.map(row => row.slice());
-    }
-
-    function storeTiling(g) {
-      const tiling = [];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (g[r][c] !== false) {
-            const id = g[r][c];
-            const index = tiling.findIndex(t => t.id === id);
-            if (index >= 0) {
-              tiling[index].cells.push([r, c]);
-            } else {
-              tiling.push({ id, cells: [[r, c]] });
-            }
-          }
-        }
-      }
-      solutions.push(tiling);
-    }
-
-    async function placeDominoesBT(r, c, currentId) {
-      if (shouldStop) return;
-
-      while (r < rows && grid[r][c] !== false) {
-        c++;
-        if (c === cols) {
-          c = 0;
-          r++;
-        }
-      }
-
-      if (r === rows) {
-        storeTiling(cloneGrid(grid));
-        return;
-      }
-
-      if (c + 1 < cols && grid[r][c] === false && grid[r][c + 1] === false) {
-        grid[r][c] = grid[r][c + 1] = currentId;
-        highlightCells([[r, c], [r, c + 1]], getNextColor());
-        await waitWhilePaused();
-        await sleep(autoSpeed);
-        await placeDominoesBT(r, c, currentId + 1);
-        grid[r][c] = grid[r][c + 1] = false;
-        highlightCells([[r, c], [r, c + 1]], "#e5e7eb");
-        await waitWhilePaused();
-        await sleep(autoSpeed);
-      }
-
-      if (r + 1 < rows && grid[r][c] === false && grid[r + 1][c] === false) {
-        grid[r][c] = grid[r + 1][c] = currentId;
-        highlightCells([[r, c], [r + 1, c]], getNextColor());
-        await waitWhilePaused();
-        await sleep(autoSpeed);
-        await placeDominoesBT(r, c, currentId + 1);
-        grid[r][c] = grid[r + 1][c] = false;
-        highlightCells([[r, c], [r + 1, c]], "#e5e7eb");
-        await waitWhilePaused();
-        await sleep(autoSpeed);
       }
     }
 
@@ -162,163 +72,132 @@
       return color;
     }
 
-    function highlightCells(cells, color = "") {
+    function highlightCells(cells, color) {
       for (const [r, c] of cells) {
-        const cell = document.getElementById(`cell-${r}-${c}`);
-        cell.style.backgroundColor = color || "#e5e7eb";
+        document.getElementById(`cell-${r}-${c}`).style.backgroundColor = color;
       }
     }
 
-    function drawTiling(index) {
-      if (index < 0 || index >= solutions.length) return;
-      createGridDisplay();
-      const tiling = solutions[index];
-      colorIndex = 0;
-      for (const { cells } of tiling) {
+    async function placeDominoes(r, c, id) {
+      while (r < rows && grid[r][c]) {
+        c++;
+        if (c === cols) {
+          c = 0;
+          r++;
+        }
+      }
+      if (r === rows) {
+        totalTilings++;
+        steps.push({ action: "solution", grid: JSON.parse(JSON.stringify(grid)) });
+        return;
+      }
+
+      if (c + 1 < cols && !grid[r][c] && !grid[r][c + 1]) {
+        const cells = [[r, c], [r, c + 1]];
+        grid[r][c] = grid[r][c + 1] = id;
         const color = getNextColor();
-        highlightCells(cells, color);
+        steps.push({ action: "place", id, cells, color });
+        await placeDominoes(r, c, id + 1);
+        steps.push({ action: "remove", id, cells });
+        grid[r][c] = grid[r][c + 1] = false;
       }
-      currentIndex = index;
-      counterElement.textContent = `Tiling count: ${solutions.length}`;
-      showingElement.textContent = `Showing: ${index + 1}`;
-    }
 
-    function showNextTiling() {
-      if (solutions.length === 0) return;
-      currentIndex = (currentIndex + 1) % solutions.length;
-      drawTiling(currentIndex);
-    }
-
-    function showPreviousTiling() {
-      if (solutions.length === 0) return;
-      currentIndex = (currentIndex - 1 + solutions.length) % solutions.length;
-      drawTiling(currentIndex);
-    }
-
-    function toggleAutoPlayStop() {
-      if (autoInterval !== null) {
-        // Stop auto play
-        clearInterval(autoInterval);
-        autoInterval = null;
-        autoPlayStopBtn.textContent = "Start Auto";
-        nextButton.disabled = false;
-        prevButton.disabled = false;
-        restartBtn.disabled = false;
-      } else {
-        // Start auto play
-        let speedInputValue = parseInt(document.getElementById("speedInput").value);
-        autoSpeed = isNaN(speedInputValue) || speedInputValue < 100 ? 1000 : speedInputValue;
-
-        autoInterval = setInterval(showNextTiling, autoSpeed);
-        autoPlayStopBtn.textContent = "Stop Auto";
-        nextButton.disabled = true;
-        prevButton.disabled = true;
-        restartBtn.disabled = true;
+      if (r + 1 < rows && !grid[r][c] && !grid[r + 1][c]) {
+        const cells = [[r, c], [r + 1, c]];
+        grid[r][c] = grid[r + 1][c] = id;
+        const color = getNextColor();
+        steps.push({ action: "place", id, cells, color });
+        await placeDominoes(r, c, id + 1);
+        steps.push({ action: "remove", id, cells });
+        grid[r][c] = grid[r + 1][c] = false;
       }
     }
 
-    function toggleBacktrackingPlayPause() {
-      if (!isBacktracking) return;
+    function renderStep() {
+      createGridDisplay(rows, cols);
+      const currentSteps = steps.slice(0, stepIndex + 1);
+      const colorMap = {};
+      for (const step of currentSteps) {
+        if (step.action === "place") {
+          colorMap[step.id] = step.color;
+          highlightCells(step.cells, step.color);
+        } else if (step.action === "remove") {
+          highlightCells(step.cells, "#e5e7eb");
+        } else if (step.action === "solution") {
+          // Nothing special for now
+        }
+      }
+      showingLabel.textContent = `Step: ${stepIndex + 1} / ${steps.length}`;
+      counterElement.textContent = `Total tilings: ${totalTilings}`;
 
-      if (shouldPause) {
-        // Resume
-        shouldPause = false;
-        playPauseBtn.textContent = "Pause";
-      } else {
-        // Pause
-        shouldPause = true;
-        playPauseBtn.textContent = "Play";
+      // Enable/disable navigation buttons properly
+      prevBtn.disabled = stepIndex === 0;
+      nextBtn.disabled = stepIndex === steps.length - 1;
+    }
+
+    function showNextStep() {
+      if (stepIndex < steps.length - 1) {
+        stepIndex++;
+        renderStep();
       }
     }
 
-    async function waitWhilePaused() {
-      while (shouldPause && !shouldStop) {
-        await sleep(100);
+    function showPreviousStep() {
+      if (stepIndex > 0) {
+        stepIndex--;
+        renderStep();
       }
     }
 
     async function startVisualization() {
-      rows = parseInt(document.getElementById("rowsInput").value);
-      cols = parseInt(document.getElementById("colsInput").value);
+      rows = parseInt(rowsInput.value);
+      cols = parseInt(colsInput.value);
+      if (rows <= 0 || cols <= 0) return alert("Invalid grid size.");
 
-      if (isNaN(rows) || isNaN(cols) || rows <= 0 || cols <= 0) {
-        alert("Please enter valid positive integers for rows and columns.");
-        return;
-      }
-
-      if ((rows * cols) % 2 !== 0) {
-        alert("Impossible: odd number of cells!");
-        return;
-      }
-
-      let speedInputValue = parseInt(document.getElementById("speedInput").value);
-      autoSpeed = isNaN(speedInputValue) || speedInputValue < 100 ? 1000 : speedInputValue;
-
-      // Reset everything
-      shouldStop = false;
-      shouldPause = false;
-      isBacktracking = true;
-      solutions = [];
-      currentIndex = 0;
-      colorIndex = 0;
-      createGridDisplay();
-      counterElement.textContent = "Tiling count: 0";
-      showingElement.textContent = "Showing: -";
-
-      // Disable/Enable buttons accordingly
+      // Disable start and inputs while running
       startBtn.disabled = true;
-      playPauseBtn.disabled = false;
-      playPauseBtn.textContent = "Pause";
-      autoPlayStopBtn.disabled = true;
-      autoPlayStopBtn.textContent = "Start Auto";
-      nextButton.disabled = true;
-      prevButton.disabled = true;
-      restartBtn.disabled = true;
+      rowsInput.disabled = true;
+      colsInput.disabled = true;
 
-      await placeDominoesBT(0, 0, 1);
+      colorIndex = 0;
+      stepIndex = 0;
+      steps = [];
+      totalTilings = 0;
 
-      isBacktracking = false;
-      startBtn.disabled = false;
-      playPauseBtn.disabled = true;
+      createGridDisplay(rows, cols);
+      await placeDominoes(0, 0, 1);
+      renderStep();
 
-      if (solutions.length > 0) {
-        drawTiling(0);
-        autoPlayStopBtn.disabled = false;
-        nextButton.disabled = false;
-        prevButton.disabled = false;
-        restartBtn.disabled = false;
-      } else {
-        counterElement.textContent = "No solutions found.";
-        showingElement.textContent = "Showing: -";
-      }
+      restartBtn.disabled = false;
+      prevBtn.disabled = true;
+      nextBtn.disabled = steps.length <= 1;
     }
 
     function restartVisualization() {
-      shouldStop = true;
-      shouldPause = false;
-      isBacktracking = false;
-      if (autoInterval !== null) {
-        clearInterval(autoInterval);
-        autoInterval = null;
-      }
-      playPauseBtn.disabled = true;
-      playPauseBtn.textContent = "Pause";
-      autoPlayStopBtn.disabled = true;
-      autoPlayStopBtn.textContent = "Start Auto";
-      createGridDisplay();
-      counterElement.textContent = "Tiling count: 0";
-      showingElement.textContent = "Showing: -";
-      solutions = [];
-      currentIndex = 0;
+      // Reset everything
+      stepIndex = 0;
+      steps = [];
+      totalTilings = 0;
       colorIndex = 0;
+
+      // Enable start and inputs
       startBtn.disabled = false;
-      nextButton.disabled = true;
-      prevButton.disabled = true;
+      rowsInput.disabled = false;
+      colsInput.disabled = false;
+
+      // Disable navigation and restart buttons
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
       restartBtn.disabled = true;
+
+      counterElement.textContent = "Tiling count: 0";
+      showingLabel.textContent = "";
+
+      // Clear grid
+      createGridDisplay(parseInt(rowsInput.value) || 2, parseInt(colsInput.value) || 4);
     }
 
-    // Initialize grid on page load
-    createGridDisplay();
+    createGridDisplay(rows, cols);
   </script>
 </body>
 </html>
