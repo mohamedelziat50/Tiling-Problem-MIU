@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Domino Tiling Visualizer</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -10,21 +10,34 @@
   <main class="max-w-4xl mx-auto p-6 w-full" style="top: 145px; position: relative;">
     <h1 class="text-3xl font-bold text-center mb-6" style="bottom: 150px; position: relative;">Domino Tiling Visualizer</h1>
 
-      <div class="flex flex-wrap gap-7 justify-center mb-4">
-      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center">
-      <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center">
-      <input type="number" id="speedInput" placeholder="Speed (ms)" min="0.1" class="border p-2 rounded w-32 text-center">
+    <div class="flex flex-wrap gap-12 justify-center mb-4">
+      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center" />
+      <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center" />
+      <input type="number" id="speedInput" placeholder="Speed (ms)" min="10" class="border p-2 rounded w-32 text-center" />
     </div>
 
-    <div class="flex flex-wrap gap-4 justify-center mb-6">
-      <button onclick="startVisualization()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
-      <button onclick="toggleAutoPlay()" id="autoBtn" disabled class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Start Auto</button>
+    <div class="flex flex-wrap gap-2 justify-center mb-6">
+      <button onclick="startVisualization()" id="startBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
+      
+      <button onclick="toggleBacktrackingPlayPause()" id="playPauseBtn" disabled
+        class="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded shadow disabled:opacity-50">
+        Pause
+      </button>
+      
+      <button onclick="toggleAutoPlayStop()" id="autoPlayStopBtn" disabled
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow disabled:opacity-50">
+        Start Auto
+      </button>
+
       <button onclick="showPreviousTiling()" id="prevBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Previous</button>
       <button onclick="showNextTiling()" id="nextBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Next</button>
+      
+      <button onclick="restartVisualization()" id="restartBtn" disabled class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Restart</button>
     </div>
 
     <div id="grid" class="grid gap-1 justify-center"></div>
     <p id="counter" class="text-center mt-4 font-medium">Tiling count: 0</p>
+    <p id="showing" class="text-center font-medium">Showing: -</p>
   </main>
 
   <script>
@@ -33,14 +46,23 @@
     let grid = [];
     let solutions = [];
     let currentIndex = 0;
+
+    let isBacktracking = false;
+    let shouldPause = false;
+    let shouldStop = false;
+
     let autoInterval = null;
-    let autoSpeed = 100;
+    let autoSpeed = 1000;
 
     const gridElement = document.getElementById("grid");
     const counterElement = document.getElementById("counter");
+    const showingElement = document.getElementById("showing");
     const nextButton = document.getElementById("nextBtn");
     const prevButton = document.getElementById("prevBtn");
-    const autoBtn = document.getElementById("autoBtn");
+    const autoPlayStopBtn = document.getElementById("autoPlayStopBtn");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const startBtn = document.getElementById("startBtn");
 
     let colorIndex = 0;
     const colors = [
@@ -94,6 +116,8 @@
     }
 
     async function placeDominoesBT(r, c, currentId) {
+      if (shouldStop) return;
+
       while (r < rows && grid[r][c] !== false) {
         c++;
         if (c === cols) {
@@ -110,20 +134,24 @@
       if (c + 1 < cols && grid[r][c] === false && grid[r][c + 1] === false) {
         grid[r][c] = grid[r][c + 1] = currentId;
         highlightCells([[r, c], [r, c + 1]], getNextColor());
+        await waitWhilePaused();
         await sleep(autoSpeed);
         await placeDominoesBT(r, c, currentId + 1);
         grid[r][c] = grid[r][c + 1] = false;
         highlightCells([[r, c], [r, c + 1]], "#e5e7eb");
+        await waitWhilePaused();
         await sleep(autoSpeed);
       }
 
       if (r + 1 < rows && grid[r][c] === false && grid[r + 1][c] === false) {
         grid[r][c] = grid[r + 1][c] = currentId;
         highlightCells([[r, c], [r + 1, c]], getNextColor());
+        await waitWhilePaused();
         await sleep(autoSpeed);
         await placeDominoesBT(r, c, currentId + 1);
         grid[r][c] = grid[r + 1][c] = false;
         highlightCells([[r, c], [r + 1, c]], "#e5e7eb");
+        await waitWhilePaused();
         await sleep(autoSpeed);
       }
     }
@@ -141,43 +169,73 @@
       }
     }
 
-    function showTiling(index) {
-      if (solutions.length === 0) return;
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          document.getElementById(`cell-${r}-${c}`).style.backgroundColor = "#e5e7eb";
-        }
-      }
-
+    function drawTiling(index) {
+      if (index < 0 || index >= solutions.length) return;
+      createGridDisplay();
       const tiling = solutions[index];
       colorIndex = 0;
-      tiling.forEach(tile => {
+      for (const { cells } of tiling) {
         const color = getNextColor();
-        highlightCells(tile.cells, color);
-      });
-
-      counterElement.textContent = `Tiling count: ${solutions.length} | Showing ${index + 1}`;
+        highlightCells(cells, color);
+      }
+      currentIndex = index;
+      counterElement.textContent = `Tiling count: ${solutions.length}`;
+      showingElement.textContent = `Showing: ${index + 1}`;
     }
 
     function showNextTiling() {
+      if (solutions.length === 0) return;
       currentIndex = (currentIndex + 1) % solutions.length;
-      showTiling(currentIndex);
+      drawTiling(currentIndex);
     }
 
     function showPreviousTiling() {
+      if (solutions.length === 0) return;
       currentIndex = (currentIndex - 1 + solutions.length) % solutions.length;
-      showTiling(currentIndex);
+      drawTiling(currentIndex);
     }
 
-    function toggleAutoPlay() {
-      autoSpeed = parseInt(document.getElementById("speedInput").value);
-      if (isNaN(autoSpeed) || autoSpeed < 100) autoSpeed = 1000;
-      autoInterval = setInterval(showNextTiling, autoSpeed);
-      autoBtn.disabled = true;
+    function toggleAutoPlayStop() {
+      if (autoInterval !== null) {
+        // Stop auto play
+        clearInterval(autoInterval);
+        autoInterval = null;
+        autoPlayStopBtn.textContent = "Start Auto";
+        nextButton.disabled = false;
+        prevButton.disabled = false;
+        restartBtn.disabled = false;
+      } else {
+        // Start auto play
+        let speedInputValue = parseInt(document.getElementById("speedInput").value);
+        autoSpeed = isNaN(speedInputValue) || speedInputValue < 100 ? 1000 : speedInputValue;
+
+        autoInterval = setInterval(showNextTiling, autoSpeed);
+        autoPlayStopBtn.textContent = "Stop Auto";
+        nextButton.disabled = true;
+        prevButton.disabled = true;
+        restartBtn.disabled = true;
+      }
     }
 
-   
+    function toggleBacktrackingPlayPause() {
+      if (!isBacktracking) return;
+
+      if (shouldPause) {
+        // Resume
+        shouldPause = false;
+        playPauseBtn.textContent = "Pause";
+      } else {
+        // Pause
+        shouldPause = true;
+        playPauseBtn.textContent = "Play";
+      }
+    }
+
+    async function waitWhilePaused() {
+      while (shouldPause && !shouldStop) {
+        await sleep(100);
+      }
+    }
 
     async function startVisualization() {
       rows = parseInt(document.getElementById("rowsInput").value);
@@ -193,19 +251,73 @@
         return;
       }
 
-      autoSpeed = parseInt(document.getElementById("speedInput").value);
-      if (isNaN(autoSpeed) || autoSpeed < 50) autoSpeed = 500;
+      let speedInputValue = parseInt(document.getElementById("speedInput").value);
+      autoSpeed = isNaN(speedInputValue) || speedInputValue < 100 ? 1000 : speedInputValue;
 
+      // Reset everything
+      shouldStop = false;
+      shouldPause = false;
+      isBacktracking = true;
+      solutions = [];
       currentIndex = 0;
       colorIndex = 0;
-      solutions = [];
       createGridDisplay();
-      await placeDominoesBT(0, 0, 1);
-      showTiling(currentIndex);
+      counterElement.textContent = "Tiling count: 0";
+      showingElement.textContent = "Showing: -";
 
-      nextButton.disabled = prevButton.disabled = autoBtn.disabled = solutions.length === 0;
+      // Disable/Enable buttons accordingly
+      startBtn.disabled = true;
+      playPauseBtn.disabled = false;
+      playPauseBtn.textContent = "Pause";
+      autoPlayStopBtn.disabled = true;
+      autoPlayStopBtn.textContent = "Start Auto";
+      nextButton.disabled = true;
+      prevButton.disabled = true;
+      restartBtn.disabled = true;
+
+      await placeDominoesBT(0, 0, 1);
+
+      isBacktracking = false;
+      startBtn.disabled = false;
+      playPauseBtn.disabled = true;
+
+      if (solutions.length > 0) {
+        drawTiling(0);
+        autoPlayStopBtn.disabled = false;
+        nextButton.disabled = false;
+        prevButton.disabled = false;
+        restartBtn.disabled = false;
+      } else {
+        counterElement.textContent = "No solutions found.";
+        showingElement.textContent = "Showing: -";
+      }
     }
 
+    function restartVisualization() {
+      shouldStop = true;
+      shouldPause = false;
+      isBacktracking = false;
+      if (autoInterval !== null) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+      }
+      playPauseBtn.disabled = true;
+      playPauseBtn.textContent = "Pause";
+      autoPlayStopBtn.disabled = true;
+      autoPlayStopBtn.textContent = "Start Auto";
+      createGridDisplay();
+      counterElement.textContent = "Tiling count: 0";
+      showingElement.textContent = "Showing: -";
+      solutions = [];
+      currentIndex = 0;
+      colorIndex = 0;
+      startBtn.disabled = false;
+      nextButton.disabled = true;
+      prevButton.disabled = true;
+      restartBtn.disabled = true;
+    }
+
+    // Initialize grid on page load
     createGridDisplay();
   </script>
 </body>
