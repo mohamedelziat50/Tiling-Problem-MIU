@@ -4,71 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Domino Tiling Visualizer</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 20px;
-    }
-    .grid {
-      display: grid;
-      gap: 5px;
-      margin: 20px auto;
-      width: max-content;
-    }
-    .cell {
-      width: 60px;
-      height: 60px;
-      background-color: #eee;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 5px;
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Domino Tiling Visualizer</h1>
-  <div>
-    <input type="number" id="rowsInput" placeholder="Rows" min="1">
-    <input type="number" id="colsInput" placeholder="Columns" min="1">
-    <button onclick="startVisualization()">Start</button>
-  </div>
-  <div class="grid" id="grid"></div>
-  <p id="counter">Tiling count: 0</p>
+<body class="bg-gray-100 text-gray-800">
+  <main class="max-w-4xl mx-auto p-6 w-full" style="top: 145px; position: relative;">
+    <h1 class="text-3xl font-bold text-center mb-6" style="bottom: 150px; position: relative;">Domino Tiling Visualizer</h1>
+
+      <div class="flex flex-wrap gap-7 justify-center mb-4">
+      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center">
+      <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center">
+      <input type="number" id="speedInput" placeholder="Speed (ms)" min="0.1" class="border p-2 rounded w-32 text-center">
+    </div>
+
+    <div class="flex flex-wrap gap-4 justify-center mb-6">
+      <button onclick="startVisualization()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
+      <button onclick="toggleAutoPlay()" id="autoBtn" disabled class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Start Auto</button>
+      <button onclick="showPreviousTiling()" id="prevBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Previous</button>
+      <button onclick="showNextTiling()" id="nextBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Next</button>
+    </div>
+
+    <div id="grid" class="grid gap-1 justify-center"></div>
+    <p id="counter" class="text-center mt-4 font-medium">Tiling count: 0</p>
+  </main>
 
   <script>
     let rows = 2;
     let cols = 4;
     let grid = [];
+    let solutions = [];
+    let currentIndex = 0;
+    let autoInterval = null;
+    let autoSpeed = 100;
+
     const gridElement = document.getElementById("grid");
     const counterElement = document.getElementById("counter");
-    let tilingCount = 0;
-    let colorIndex = 0;
+    const nextButton = document.getElementById("nextBtn");
+    const prevButton = document.getElementById("prevBtn");
+    const autoBtn = document.getElementById("autoBtn");
 
+    let colorIndex = 0;
     const colors = [
       "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf",
       "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff",
       "#fffffc", "#d0f4de", "#fef9c3", "#fde2e4"
     ];
 
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     function createGridDisplay() {
       gridElement.innerHTML = "";
-      gridElement.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
-      gridElement.style.gridTemplateRows = `repeat(${rows}, 60px)`;
+      gridElement.style.gridTemplateColumns = `repeat(${cols}, 48px)`;
+      gridElement.style.gridTemplateRows = `repeat(${rows}, 48px)`;
       grid = [];
 
       for (let r = 0; r < rows; r++) {
         grid[r] = [];
         for (let c = 0; c < cols; c++) {
           const cell = document.createElement("div");
-          cell.className = "cell";
+          cell.className = "w-12 h-12 bg-gray-200 border border-gray-400 flex items-center justify-center text-xs rounded";
           cell.id = `cell-${r}-${c}`;
           grid[r][c] = false;
           gridElement.appendChild(cell);
@@ -76,44 +71,60 @@
       }
     }
 
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+    function cloneGrid(g) {
+      return g.map(row => row.slice());
     }
 
-    async function placeDomino(row, col) {
-      while (row < rows && grid[row][col]) {
-        col++;
-        if (col === cols) {
-          col = 0;
-          row++;
+    function storeTiling(g) {
+      const tiling = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (g[r][c] !== false) {
+            const id = g[r][c];
+            const index = tiling.findIndex(t => t.id === id);
+            if (index >= 0) {
+              tiling[index].cells.push([r, c]);
+            } else {
+              tiling.push({ id, cells: [[r, c]] });
+            }
+          }
+        }
+      }
+      solutions.push(tiling);
+    }
+
+    async function placeDominoesBT(r, c, currentId) {
+      while (r < rows && grid[r][c] !== false) {
+        c++;
+        if (c === cols) {
+          c = 0;
+          r++;
         }
       }
 
-      if (row === rows) {
-        tilingCount++;
-        counterElement.textContent = `Tiling count: ${tilingCount}`;
-        await sleep(500);
+      if (r === rows) {
+        storeTiling(cloneGrid(grid));
         return;
       }
 
-      if (col + 1 < cols && !grid[row][col + 1]) {
-        grid[row][col] = grid[row][col + 1] = true;
-        const color = getNextColor();
-        highlightCells([[row, col], [row, col + 1]], true, color);
-        await sleep(300);
-        await placeDomino(row, col);
-        highlightCells([[row, col], [row, col + 1]], false);
-        grid[row][col] = grid[row][col + 1] = false;
+      if (c + 1 < cols && grid[r][c] === false && grid[r][c + 1] === false) {
+        grid[r][c] = grid[r][c + 1] = currentId;
+        highlightCells([[r, c], [r, c + 1]], getNextColor());
+        await sleep(autoSpeed);
+        await placeDominoesBT(r, c, currentId + 1);
+        grid[r][c] = grid[r][c + 1] = false;
+        highlightCells([[r, c], [r, c + 1]], "#e5e7eb");
+        await sleep(autoSpeed);
       }
 
-      if (row + 1 < rows && !grid[row + 1][col]) {
-        grid[row][col] = grid[row + 1][col] = true;
-        const color = getNextColor();
-        highlightCells([[row, col], [row + 1, col]], true, color);
-        await sleep(300);
-        await placeDomino(row, col);
-        highlightCells([[row, col], [row + 1, col]], false);
-        grid[row][col] = grid[row + 1][col] = false;
+      if (r + 1 < rows && grid[r][c] === false && grid[r + 1][c] === false) {
+        grid[r][c] = grid[r + 1][c] = currentId;
+        highlightCells([[r, c], [r + 1, c]], getNextColor());
+        await sleep(autoSpeed);
+        await placeDominoesBT(r, c, currentId + 1);
+        grid[r][c] = grid[r + 1][c] = false;
+        highlightCells([[r, c], [r + 1, c]], "#e5e7eb");
+        await sleep(autoSpeed);
       }
     }
 
@@ -123,16 +134,50 @@
       return color;
     }
 
-    function highlightCells(cells, on, color = "") {
+    function highlightCells(cells, color = "") {
       for (const [r, c] of cells) {
         const cell = document.getElementById(`cell-${r}-${c}`);
-        if (on) {
-          cell.style.backgroundColor = color;
-        } else {
-          cell.style.backgroundColor = "#eee";
-        }
+        cell.style.backgroundColor = color || "#e5e7eb";
       }
     }
+
+    function showTiling(index) {
+      if (solutions.length === 0) return;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          document.getElementById(`cell-${r}-${c}`).style.backgroundColor = "#e5e7eb";
+        }
+      }
+
+      const tiling = solutions[index];
+      colorIndex = 0;
+      tiling.forEach(tile => {
+        const color = getNextColor();
+        highlightCells(tile.cells, color);
+      });
+
+      counterElement.textContent = `Tiling count: ${solutions.length} | Showing ${index + 1}`;
+    }
+
+    function showNextTiling() {
+      currentIndex = (currentIndex + 1) % solutions.length;
+      showTiling(currentIndex);
+    }
+
+    function showPreviousTiling() {
+      currentIndex = (currentIndex - 1 + solutions.length) % solutions.length;
+      showTiling(currentIndex);
+    }
+
+    function toggleAutoPlay() {
+      autoSpeed = parseInt(document.getElementById("speedInput").value);
+      if (isNaN(autoSpeed) || autoSpeed < 100) autoSpeed = 1000;
+      autoInterval = setInterval(showNextTiling, autoSpeed);
+      autoBtn.disabled = true;
+    }
+
+   
 
     async function startVisualization() {
       rows = parseInt(document.getElementById("rowsInput").value);
@@ -148,11 +193,17 @@
         return;
       }
 
-      tilingCount = 0;
+      autoSpeed = parseInt(document.getElementById("speedInput").value);
+      if (isNaN(autoSpeed) || autoSpeed < 50) autoSpeed = 500;
+
+      currentIndex = 0;
       colorIndex = 0;
-      counterElement.textContent = "Tiling count: 0";
+      solutions = [];
       createGridDisplay();
-      await placeDomino(0, 0);
+      await placeDominoesBT(0, 0, 1);
+      showTiling(currentIndex);
+
+      nextButton.disabled = prevButton.disabled = autoBtn.disabled = solutions.length === 0;
     }
 
     createGridDisplay();
