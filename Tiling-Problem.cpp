@@ -1,8 +1,7 @@
+// Access our Tiling Problem all files/codes on GitHub (if needed): https://github.com/mohamedelziat50/Tiling-Problem-MIU
 #include <iostream>
 #include <vector>
-
 using namespace std;
-
 
 /*
     -----------------------------------------------------
@@ -17,6 +16,21 @@ using namespace std;
 const int ROWS = 2; 
 // Global counter to count valid tiling configurations
 int tilingCount = 0;
+
+/*
+    -----------------------------------------------------
+    VISUALIZATION:
+    -----------------------------------------------------
+    For a step-by-step visual representation of the brute force algorithm,
+    open the file: "brute-force-visualization.html" in your browser.
+    
+    The HTML file provides an interactive visualization that shows:
+    - How dominoes are placed and backtracked
+    - Real-time step navigation
+    - Autoplay functionality with speed control
+    - Visual representation of the 2xN grid tiling process (manual or automatic)
+    -----------------------------------------------------
+*/
 
 // -------------------------------
 // BRUTE FORCE APPROACH --> traverses all possible placements of dominoes using backtracking
@@ -73,10 +87,6 @@ void placeDomino(int row, int col, vector<vector<bool>>& grid) {
     }
 }
 
-
-
-
-
 // -------------------------------
 // DIVIDE AND CONQUER APPROACH
 // Time Complexity: O(2^n)
@@ -95,40 +105,62 @@ int divideAndConquerTiling(int n) {
 }
 
 int main() {
+    cout << "========================================" << endl;
+    cout << "         2xN DOMINO TILING         " << endl;
+    cout << "========================================" << endl;
+    cout << endl;
 
     // ----------- FIRST APPROACH: Brute Force via Backtracking ------------
-
+    
+    cout << "METHOD 1: BRUTE FORCE BACKTRACKING" << endl;
+    cout << "---------------------------------------" << endl;
+    
     int n;
-    cout << "Enter columns for brute force method (2 x n grid): ";
+    cout << "Enter number of columns for 2xn grid: ";
     cin >> n;
+    cout << endl;
 
     // Initialize the 2 x n grid with all cells initially empty (false)
     vector<vector<bool>> grid(ROWS, vector<bool>(n, false));
-
+    
     // Call the recursive function to count valid tilings
     placeDomino(0, 0, grid);
 
-    // Output number of tiles (each domino covers 2 squares, so we need (2 * n) / 2 tiles)
-    cout << "Number of tiles needed: " << (2 * n) / 2 << endl;
+    cout << "   RESULTS:" << endl;
+    cout << "   Grid Size: 2 x " << n << endl;
+    cout << "   Dominoes Needed: " << (2 * n) / 2 << endl;
+    cout << "   Total Valid Tilings: " << tilingCount << endl;
+    cout << endl;
 
-    // Output total number of valid ways to tile the 2 x n grid
-    cout << "Possible tilings using brute force: " << tilingCount << endl;
+    // Reset counter for next method
+    tilingCount = 0;
 
-
+    cout << "===============================================" << endl;
+    cout << endl;
 
     // ----------- SECOND APPROACH: Divide and Conquer ------------
 
+    cout << "METHOD 2: DIVIDE AND CONQUER" << endl;
+    cout << "--------------------------------" << endl;
+    
     int m; // Use a different variable name to avoid redeclaration error
-    cout << "Enter columns for divide and conquer method (2 x n grid): ";
+    cout << "Enter number of columns for 2xn grid: ";
     cin >> m;
+    cout << endl;
 
     // Call the divide and conquer recursive function to get tiling count
     int result = divideAndConquerTiling(m);
 
-    // Output the result from divide and conquer method
-    cout << "Number of ways to tile 2 x " << m << " grid using divide and conquer: " << result << endl;
+    cout << "   RESULTS:" << endl;
+    cout << "   Grid Size: 2 x " << m << endl;
+    cout << "   Dominoes Needed: " << (2 * m) / 2 << endl;
+    cout << "   Total Valid Tilings: " << result << endl;
+    cout << endl;
+
+    cout << "===============================================" << endl;
+    cout << "           CALCULATION COMPLETE!           " << endl;
+    cout << "===============================================" << endl;
 
     return 0;
-
 }
 
