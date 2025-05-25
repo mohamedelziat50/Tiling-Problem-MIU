@@ -73,10 +73,6 @@ void placeDomino(int row, int col, vector<vector<bool>>& grid) {
     }
 }
 
-
-
-
-
 // -------------------------------
 // DIVIDE AND CONQUER APPROACH
 // Time Complexity: O(2^n)
