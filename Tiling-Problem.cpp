@@ -1,8 +1,7 @@
+// Access our Tiling Problem all files/codes on GitHub (if needed): https://github.com/mohamedelziat50/Tiling-Problem-MIU
 #include <iostream>
 #include <vector>
-
 using namespace std;
-
 
 /*
     -----------------------------------------------------
@@ -17,6 +16,21 @@ using namespace std;
 const int ROWS = 2; 
 // Global counter to count valid tiling configurations
 int tilingCount = 0;
+
+/*
+    -----------------------------------------------------
+    VISUALIZATION:
+    -----------------------------------------------------
+    For a step-by-step visual representation of the brute force algorithm,
+    open the file: "brute-force-visualization.html" in your browser.
+    
+    The HTML file provides an interactive visualization that shows:
+    - How dominoes are placed and backtracked
+    - Real-time step navigation
+    - Autoplay functionality with speed control
+    - Visual representation of the 2xN grid tiling process (manual or automatic)
+    -----------------------------------------------------
+*/
 
 // -------------------------------
 // BRUTE FORCE APPROACH --> traverses all possible placements of dominoes using backtracking
