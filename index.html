@@ -8,17 +8,22 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
   <main class="max-w-4xl mx-auto p-6 w-full relative top-36">
-    <h1 class="text-3xl font-bold text-center mb-6 relative bottom-36">Domino Tiling Visualizer</h1>
-
-    <div class="flex flex-wrap gap-12 justify-center mb-4">
-      <input type="number" id="rowsInput" placeholder="Rows" min="1" class="border p-2 rounded w-24 text-center" value="2" />
+    <h1 class="text-3xl font-bold text-center mb-6 relative bottom-36">Domino Tiling Visualizer</h1>    <div class="flex flex-wrap gap-12 justify-center mb-4">
+      <div class="flex items-center">
+        <span class="mr-2 font-medium">Rows: 2</span>
+      </div>
       <input type="number" id="colsInput" placeholder="Columns" min="1" class="border p-2 rounded w-24 text-center" value="4" />
+      <div class="flex items-center gap-2">
+        <label for="speedInput" class="font-medium">Speed:</label>
+        <input type="range" id="speedInput" min="1" max="10" value="5" class="w-32">
+      </div>
     </div>
 
-    <div class="flex flex-wrap gap-2 justify-center mb-6">
-      <button onclick="startVisualization()" id="startBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
+    <div class="flex flex-wrap gap-2 justify-center mb-6">      <button onclick="startVisualization()" id="startBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow">Start</button>
       <button onclick="showPreviousStep()" id="prevBtn" disabled class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Previous</button>
       <button onclick="showNextStep()" id="nextBtn" disabled class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Next</button>
+      <button onclick="toggleAutoplay()" id="autoplayBtn" disabled class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Autoplay</button>
+      <button onclick="stopAutoplay()" id="stopBtn" disabled class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Stop</button>
       <button onclick="restartVisualization()" id="restartBtn" disabled class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded shadow disabled:opacity-50">Restart</button>
     </div>
 
@@ -35,12 +40,44 @@
     let steps = [];
     let stepIndex = 0;
     let colorIndex = 0;
-    let totalTilings = 0;
-    const colors = ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff"];
+    let totalTilings = 0;    const colors = ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff"];
+    let autoplayInterval = null;
 
     const gridElement = document.getElementById("grid");
     const counterElement = document.getElementById("counter");
     const showingLabel = document.getElementById("showingLabel");
+    
+    function toggleAutoplay() {
+      if (autoplayInterval) {
+        stopAutoplay();
+      } else {
+        startAutoplay();
+      }
+    }
+
+    function startAutoplay() {
+      if (!autoplayInterval) {
+        const speed = 1100 - (speedInput.value * 100); // Convert 1-10 to milliseconds
+        autoplayInterval = setInterval(() => {
+          if (stepIndex < steps.length - 1) {
+            showNextStep();
+          } else {
+            stopAutoplay();
+          }
+        }, speed);
+        autoplayBtn.textContent = "Pause";
+        stopBtn.disabled = false;
+      }
+    }
+
+    function stopAutoplay() {
+      if (autoplayInterval) {
+        clearInterval(autoplayInterval);
+        autoplayInterval = null;
+        autoplayBtn.textContent = "Autoplay";
+        stopBtn.disabled = true;
+      }
+    }
 
     const startBtn = document.getElementById("startBtn");
     const prevBtn = document.getElementById("prevBtn");
@@ -147,16 +184,13 @@
         stepIndex--;
         renderStep();
       }
-    }
-
-    async function startVisualization() {
-      rows = parseInt(rowsInput.value);
+    }    async function startVisualization() {
+      rows = 2; // Static value
       cols = parseInt(colsInput.value);
-      if (rows <= 0 || cols <= 0) return alert("Invalid grid size.");
+      if (cols <= 0) return alert("Invalid grid size.");
 
       // Disable start and inputs while running
       startBtn.disabled = true;
-      rowsInput.disabled = true;
       colsInput.disabled = true;
 
       colorIndex = 0;
@@ -169,11 +203,12 @@
       renderStep();
 
       restartBtn.disabled = false;
+      autoplayBtn.disabled = false;
       prevBtn.disabled = true;
       nextBtn.disabled = steps.length <= 1;
-    }
-
-    function restartVisualization() {
+    }    function restartVisualization() {
+      stopAutoplay(); // Stop autoplay if running
+      
       // Reset everything
       stepIndex = 0;
       steps = [];
@@ -182,19 +217,20 @@
 
       // Enable start and inputs
       startBtn.disabled = false;
-      rowsInput.disabled = false;
       colsInput.disabled = false;
 
-      // Disable navigation and restart buttons
+      // Disable navigation and control buttons
       prevBtn.disabled = true;
       nextBtn.disabled = true;
+      autoplayBtn.disabled = true;
+      stopBtn.disabled = true;
       restartBtn.disabled = true;
 
       counterElement.textContent = "Tiling count: 0";
       showingLabel.textContent = "";
 
       // Clear grid
-      createGridDisplay(parseInt(rowsInput.value) || 2, parseInt(colsInput.value) || 4);
+      createGridDisplay(2, parseInt(colsInput.value) || 4);
     }
 
     createGridDisplay(rows, cols);
