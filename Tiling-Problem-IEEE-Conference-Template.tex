@@ -59,7 +59,7 @@
 \maketitle
 
 \begin{abstract}
-The tiling problem seeks to count the number of ways a $2 \times n$ rectangular grid can be completely covered with $2 \times 1$ dominoes. This paper compares two algorithmic approaches: brute force backtracking and a recursive divide and conquer method. We describe and implement both methods, analyze their computational complexities, and experimentally evaluate their performance. Our results show that, for this problem, both approaches have exponential time complexity, but the divide and conquer (recurrence) method is often simpler to implement and reason about. Brute force guarantees all solutions by exploring every configuration, while the recursive approach leverages the problem's structure for a more concise solution. We discuss the strengths and limitations of each method in the context of the tiling problem.
+The goal of the tiling problem is to determine how many ways there are to cover a 2 × n rectangular grid entirely with 2 × 1 dominoes. This study contrasts two algorithmic strategies: a recursive divide and conquer strategy and brute force backtracking. We outline and put into practice both approaches, examine the computational difficulties involved, and assess their effectiveness experimentally. Our findings demonstrate that while both strategies have exponential time complexity for this problem, the divide and conquer (recurrence) strategy is frequently easier to apply and understand. While the recursive method makes use of the problem's structure to produce a more simple solution, brute force ensures all solutions by investigating all possible combinations. We go over each method's advantages and disadvantages in relation to the tiling problem.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -67,30 +67,29 @@ Tiling problem, brute force, divide and conquer
 \end{IEEEkeywords}
 
 \section{Introduction}
-The tiling problem is a classic question in combinatorics and computer science: In how many ways can a $2 \times n$ rectangular grid be completely covered with $2 \times 1$ dominoes, placed either horizontally or vertically, without overlaps or gaps? This problem has applications in mathematics, physics, and algorithm design, and serves as a fundamental example of recursive problem solving.
+A well-known problem in computer science and combinatorics is the "tiling problem": How many different ways are there to cover a $2 \times n$ rectangular grid with $2 \times 1$ dominoes arranged vertically or horizontally, with no overlap or spaces between them? This problem is a basic illustration of recursive problem solving and has applications in physics, mathematics, and algorithm design.
 
-% Example of a simple diagram (replace with your own if available)
 \begin{figure}[htbp]
 \centerline{\includegraphics[width=0.3\textwidth]{tilingproblem.png}}
 \caption{Example of domino tiling on a $2 \times 4$ grid.}
 \label{fig:tiling_example}
 \end{figure}
 
-As the grid length $n$ increases, the number of possible tilings grows rapidly, making exhaustive enumeration computationally expensive. Two common approaches to solving this problem are brute force backtracking and recursive (divide and conquer) methods. The brute force approach systematically explores all possible placements, guaranteeing that every valid tiling is counted. The recursive approach leverages the structure of the problem, expressing the solution for a grid of length $n$ in terms of smaller subproblems.
+The number of potential tilings rapidly increases with grid length $n$, making exhaustive enumeration computationally costly. Recursive (divide and conquer) methods and brute force backtracking are two popular strategies for resolving this issue. By methodically examining every potential placement, the brute force approach ensures that every legitimate tile is taken into account. By expressing the solution for a grid of length $n$ in terms of smaller subproblems, the recursive method makes use of the problem's structure.
 
-Although both methods have exponential time complexity for this problem, the recursive approach is often more concise and easier to implement, while brute force provides a direct way to enumerate all solutions. In this paper, we describe, implement, and compare both approaches, analyzing their strengths and limitations.
+The recursive approach is frequently less complicated and simpler to implement, while brute force offers a direct method to list all solutions, even though both approaches have exponential time complexity for this problem. In this work, we outline, put into practice, and contrast both strategies while evaluating their advantages and disadvantages.
 
 \section{Brute Force Approach}
 
-The brute force approach to the domino tiling problem employs exhaustive search to enumerate all possible ways of placing dominoes on a $2 \times n$ grid. This method guarantees finding the optimal solution by systematically exploring every valid configuration through backtracking. While computationally expensive for large grids, the brute force approach provides a clear understanding of the problem's structure and serves as a baseline for comparing more sophisticated algorithms.
+The brute force method for solving the domino tiling problem uses exhaustive search to list every possible arrangement of dominoes on a $2 \times n$ grid. This approach ensures that the best solution will be found by methodically going back and examining each possible arrangement. The brute force approach offers a clear understanding of the problem's structure and acts as a baseline for comparing more complex algorithms, despite being computationally costly for large grids.
 
-The fundamental principle behind this approach is to recursively place dominoes in all possible orientations (horizontal and vertical) at each empty position, maintaining the constraint that each domino must cover exactly two adjacent cells without overlapping with previously placed dominoes.
+The basic idea of this method is to recursively arrange dominoes in every conceivable orientation (horizontal and vertical) at every empty space while adhering to the requirement that each domino cover precisely two neighboring cells without overlapping with dominoes that have already been placed.
 
 \subsection{Approach}
 
-The brute force solution utilizes a recursive backtracking strategy that systematically explores the solution space. The algorithm maintains a $2 \times n$ boolean grid to track occupied cells and employs a depth-first search to place dominoes.
+The brute force solution utilizes a recursive backtracking strategy that explores all possible solutions. The algorithm maintains a $2 \times n$ boolean grid to track occupied cells and to place dominoes.
 
-Key components of the approach include:
+Key components of the approach include the following.
 
 \begin{itemize}
     \item \textbf{State Representation}: A $2 \times n$ boolean matrix where \texttt{true} indicates an occupied cell
@@ -99,11 +98,11 @@ Key components of the approach include:
     \item \textbf{Backtracking}: Undo placements when no valid continuation exists
 \end{itemize}
 
-The algorithm begins at position $(0,0)$ and proceeds cell by cell, skipping already occupied positions. For each empty cell, it attempts to place a domino in both possible orientations, recursively solving the remaining subproblem.
+Starting at position $(0,0)$, the algorithm moves through each cell, avoiding those that are already occupied. It solves the remaining subproblem recursively by attempting to position a domino in each of the two possible orientations for each empty cell.
 
 \subsection{The Algorithm}
 
-The implementation consists of several key components working together to enumerate all valid tilings. We break down the algorithm into logical components:
+The implementation consists of several components working together to ensure all valid tilings. Here, We break down the algorithm into logical components:
 
 \textbf{Function Header and Parameters:}
 
@@ -120,11 +119,11 @@ The core recursive function is defined as follows:
 \end{algorithmic}
 \end{algorithm}
 
-The function takes three parameters: the current position coordinates $(row, col)$ and a reference to the grid state. The grid parameter is passed by reference to avoid copying overhead and to maintain state changes across recursive calls.
+The function takes three parameters: the current position $(row, col)$ and a reference to the grid. The grid variable is passed by reference to avoid copying overhead and to maintain state changes across recursive calls.
 
 \textbf{Global Variables:}
 
-The algorithm uses minimal global variables to maintain state across recursive calls:
+The algorithm uses the following global variables:
 
 \begin{algorithm}[htbp]
 \caption{Global Variables}
@@ -136,7 +135,7 @@ The algorithm uses minimal global variables to maintain state across recursive c
 
 \textbf{Cell Navigation Logic:}
 
-The algorithm must efficiently find the next empty cell to process. This navigation ensures systematic exploration:
+The algorithm efficiently finds the next empty cell to process. This navigation ensures organized exploration:
 
 \begin{algorithm}[htbp]
 \caption{Finding Next Empty Cell}
@@ -155,7 +154,7 @@ This loop skips over already occupied cells, moving left to right within each ro
 
 \textbf{Base Case Detection:}
 
-The recursive process concludes when every cell has been processed, signaling that a complete and valid tiling configuration has been achieved.:
+The recursive process ends when every cell has been processed, indicating that a complete and valid tiling has been achieved.
 
 \begin{algorithm}[htbp]
 \caption{Complete Tiling Detection}
@@ -203,7 +202,7 @@ Similarly, the algorithm attempts vertical placement if the cell below is availa
 
 \textbf{Main Function:}
 
-The main function initializes the grid and starts the recursive exploration:
+The main function initializes the grid and starts the recursive function call:
 
 \begin{algorithm}[htbp]
 \caption{Main Function}
@@ -219,9 +218,9 @@ The main function initializes the grid and starts the recursive exploration:
 
 \subsection{Complexity Analysis}
 
-\textbf{Time Complexity:} The brute force algorithm has exponential time complexity $O(2^n)$ because at each empty position, the algorithm explores up to two placement options (horizontal and vertical). The actual runtime is reduced by constraint checking and early pruning.
+\textbf{Time Complexity:} The brute force algorithm uses up to two placement options (horizontal and vertical) at each empty position, resulting in an exponential time complexity $O(2^n)$.
 
-\textbf{Space Complexity:} The algorithm uses $O(n)$ space for the $2 \times n$ grid parameter and $O(n)$ space for the recursion stack, resulting in overall space complexity of $O(n)$.
+\textbf{Space Complexity:} The algorithm's overall space complexity is $O(n)$ since it uses $O(n)$ space for the recursion stack and $O(n)$ space for the $2 \times n$ grid parameter.
 
 \subsection{Step-by-Step Trace for $2 \times 2$ Grid}
 
@@ -256,13 +255,13 @@ To illustrate the process, consider the execution trace for a $2 \times 2$ grid:
 
 \section{Divide and Conquer Approach}
 
-The divide and conquer approach to the domino tiling problem employs a recursive strategy that breaks down the problem into smaller subproblems. Unlike the brute force method that explicitly tracks grid states, this approach calculates the number of tiling configurations by recognizing patterns in how dominoes can be placed.
+The divide and conquer method for the domino tiling challenge uses a recursive technique to split the problem into smaller subproblems. Unlike the brute force approach that explicitly tracks grid states, this method uses patterns in how dominoes can be arranged to estimate the number of tiling configurations.
 
-The fundamental principle behind this approach is to recognize that at any given column position, there are only two possible ways to begin filling the grid: either with a single vertical domino or with two horizontal dominoes stacked on top of each other. This observation leads to a simple recursive decomposition.
+This method's basic rule is that there are only two ways to start filling the grid at any given column position: either with a single vertical domino or with two horizontal dominoes stacked on top of one another. This observation produces a basic recursive breakdown.
 
 \subsection{Approach}
 
-The divide and conquer solution utilizes a recursive strategy based on a recurrence relation that captures the structure of the problem. Rather than explicitly tracking the grid, the algorithm models the number of tiling configurations as a function of board length.
+Based on a recurrence relation that catches the structure of the problem, the divide and conquer solution employs a recursive approach. The method models the number of tiling configurations as a function of board length rather than clearly tracking the grid.
 
 Key components of the approach include:
 
@@ -385,8 +384,8 @@ To illustrate the divide and conquer process, consider the execution trace for a
 \centering
 \caption{Execution trace for $2 \times 4$ grid using divide and conquer}
 \label{tab:dc_trace}
-\renewcommand{\arraystretch}{1.8}
-\begin{tabular}{|p{1.0cm}|p{2.0cm}|p{2.0cm}|p{1.5cm}|}
+\renewcommand{\arraystretch}{2}
+\begin{tabular}{|p{1.5cm}|p{2.0cm}|p{2.0cm}|p{1.5cm}|}
 \hline
 \textbf{Call} & \textbf{Function Call} & \textbf{Recursive Breakdown} & \textbf{Result} \\
 \hline
@@ -403,63 +402,18 @@ To illustrate the divide and conquer process, consider the execution trace for a
 \end{tabular}
 \end{table}
 
-\textbf{Detailed Call Tree for $T(4)$:}
-
-\begin{verbatim}
-T(4)
-├── T(3)
-│   ├── T(2)
-│   │   ├── T(1) → 1
-│   │   └── T(0) → 1
-│   │   └── Result: 2
-│   └── T(1) → 1
-│   └── Result: 3
-└── T(2)
-    ├── T(1) → 1
-    └── T(0) → 1
-    └── Result: 2
-└── Final Result: 5
-\end{verbatim}
-
 \section{Comparison and Results}
 
-Both approaches successfully solve the domino tiling problem but serve different purposes and exhibit distinct performance characteristics. This section provides a comprehensive comparison of the brute force and divide and conquer methods.
+The domino tiling problem is successfully solved by both methods, although they have different uses and performance traits. A thorough comparison between the divide and conquer and brute force strategies is given in this section.
 
 \subsection{Performance Analysis}
-
-\begin{table}[htbp]
-\centering
-\caption{Performance Comparison for Different Grid Sizes}
-\label{tab:performance}
-\renewcommand{\arraystretch}{1.5}
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{n} & \textbf{Tilings} & \textbf{Brute Force} & \textbf{Recursive} \\
-& & \textbf{Time} & \textbf{Time} \\
-\hline
-2 & 2 & 0.001ms & 0.001ms \\
-\hline
-4 & 5 & 0.05ms & 0.002ms \\
-\hline
-6 & 13 & 2.1ms & 0.15ms \\
-\hline
-8 & 34 & 89ms & 12ms \\
-\hline
-10 & 89 & 3.2s & 1.5s \\
-\hline
-12 & 233 & 2.1min & 45s \\
-\hline
-\end{tabular}
-\end{table}
-
-\vspace{1cm} % Add vertical space between tables
 
 \begin{table}[!htbp]
 \centering
 \caption{Algorithmic Characteristics Comparison}
 \label{tab:algorithm_comparison}
 \renewcommand{\arraystretch}{1.6}
-\begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|}
+\begin{tabular}{|p{2.2cm}|p{2cm}|p{2cm}|}
 \hline
 \textbf{Aspect} & \textbf{Brute Force} & \textbf{Divide and Conquer} \\
 \hline
@@ -470,8 +424,6 @@ Both approaches successfully solve the domino tiling problem but serve different
 \textbf{Implementation} & Complex backtracking logic & Simple recursive formula \\
 \hline
 \textbf{Output} & Enumerates all solutions & Counts total solutions \\
-\hline
-\textbf{Memory Usage} & Grid state tracking & Minimal state \\
 \hline
 \textbf{Optimization} & Limited pruning possible & Limited optimization \\
 \hline
@@ -484,62 +436,38 @@ Both approaches successfully solve the domino tiling problem but serve different
 
 \textit{Strengths:}
 \begin{itemize}
-    \item Enumerates all possible tiling configurations
-    \item Provides complete solution set for analysis
-    \item Intuitive and straightforward implementation
-    \item Can be modified to generate actual tiling patterns
-    \item Guarantees finding all solutions
+    \item Finds all possible tilings
+    \item Easy to understand and modify
 \end{itemize}
 
 \textit{Limitations:}
 \begin{itemize}
-    \item Exponential time complexity limits scalability
-    \item High memory overhead for grid state tracking
-    \item Complex backtracking logic prone to implementation errors
-    \item Impractical for large grid sizes ($n > 15$)
-    \item Limited optimization opportunities
+    \item Very slow for large $n$
+    \item Uses a lot of memory
+    \item Harder to debug for big grids
 \end{itemize}
 
 \textbf{Divide and Conquer Approach:}
 
 \textit{Strengths:}
 \begin{itemize}
-    \item Elegant mathematical formulation
-    \item Minimal memory footprint
-    \item Simple and concise implementation
-    \item Direct connection to Fibonacci sequence
-    \item Scales well with optimization
+    \item Simple and compact code
+    \item Low memory usage
+    \item Relates to Fibonacci numbers
 \end{itemize}
 
 \textit{Limitations:}
 \begin{itemize}
-    \item Only provides count, not actual configurations
-    \item Naive implementation has exponential complexity
-    \item Requires mathematical insight to derive recurrence
-    \item Less intuitive for beginners
-    \item Cannot enumerate specific tiling patterns
+    \item Only gives the count, not the patterns
+    \item Still slow without optimization
+    \item Recurrence may be less obvious
 \end{itemize}
 
 \section{Conclusion}
 
-This paper has presented and compared two fundamental approaches to solving the domino tiling problem: brute force backtracking and recursive divide and conquer methods. Both approaches successfully address the challenge of counting valid tilings for a $2 \times n$ grid, but they serve different purposes and exhibit distinct characteristics.
+In this paper, we have analyzed and compared two approaches to the domino tiling problem: brute force backtracking and the divide and conquer method. The brute force approach, while exhaustive and capable of generating all possible tiling arrangements, is limited by its high computational and memory requirements, making it impractical for large grid sizes. On the other hand, the divide and conquer approach leverages mathematical recurrence, offering a more efficient solution for counting the number of tilings, though it does not enumerate the actual arrangements.
 
-The brute force approach provides a comprehensive solution by systematically exploring all possible domino placements through backtracking. While this method guarantees complete enumeration of all valid configurations, its exponential time complexity severely limits its practical applicability for large grid sizes. However, it remains valuable for understanding the problem structure and for applications requiring actual tiling patterns rather than just counts.
-
-The divide and conquer approach transforms the combinatorial problem into an elegant mathematical recurrence relation that mirrors the Fibonacci sequence. This method demonstrates the power of recognizing underlying mathematical structures in algorithmic problems. When optimized with memoization, it achieves linear time complexity, making it highly efficient for counting tilings even for large values of $n$.
-
-Our experimental results confirm the theoretical analysis, showing that the optimized recursive approach significantly outperforms the brute force method for all tested grid sizes. The performance gap widens dramatically as $n$ increases, with the optimized approach maintaining constant-time performance while the brute force method becomes computationally prohibitive.
-
-For practical applications, the choice between these approaches depends on the specific requirements:
-\begin{itemize}
-    \item When only the count of tilings is needed, the optimized divide and conquer approach is strongly preferred
-    \item When actual tiling configurations must be generated, the brute force approach remains necessary
-    \item For educational purposes, both methods provide valuable insights into different algorithmic paradigms
-\end{itemize}
-
-This comparison highlights the importance of recognizing when a problem can be reduced to a well-known mathematical sequence or recurrence relation, as such insights can lead to dramatically more efficient solutions. The tiling problem serves as an excellent example of how mathematical elegance and computational efficiency can be achieved through proper algorithmic design.
-
-Future work could explore hybrid approaches that combine the counting efficiency of the recursive method with selective enumeration capabilities, or investigate parallel implementations of the brute force approach to improve its scalability.
+Our results demonstrate that, for most practical scenarios, the recursive divide and conquer method is preferable due to its simplicity and efficiency. However, the brute force approach remains valuable for applications where the enumeration of all possible tilings is required. Ultimately, the choice of method should be guided by the specific needs of the problem at hand, balancing the trade-offs between completeness and computational feasibility.
 
 \begin{thebibliography}{00}
 \bibitem{b1} D. E. Knuth, ``The Art of Computer Programming, Volume 4A: Combinatorial Algorithms,'' Addison-Wesley Professional, 2011.
