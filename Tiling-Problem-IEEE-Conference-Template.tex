@@ -218,9 +218,9 @@ The main function initializes the grid and starts the recursive function call:
 
 \subsection{Complexity Analysis}
 
-\textbf{Time Complexity:} The brute force algorithm uses up to two placement options (horizontal and vertical) at each empty position, resulting in an exponential time complexity $O(2^n)$.
+\textbf{Time Complexity:} It uses at most two options of placements per empty space, which is vertical and horizontal, making the running time exponential in $O(2^n)$.
 
-\textbf{Space Complexity:} The algorithm's overall space complexity is $O(n)$ since it uses $O(n)$ space for the recursion stack and $O(n)$ space for the $2 \times n$ grid parameter.
+\textbf{Space Complexity:} The algorithm's overall space complexity uses $O(n)$ space for the recursion stack and $O(n)$ space for the $2 \times n$ grid parameter.
 
 \subsection{Step-by-Step Trace for $2 \times 2$ Grid}
 
@@ -261,15 +261,15 @@ The basic principle here is that there are only two possible methods of starting
 
 \subsection{Approach}
 
-Based on a recurrence relation that understands the structure of the problem, the divide and conquer solution employs a recursive approach. The method expresses the number of tiling configurations in terms of board length rather than explicitly tracing the grid.
+Based on a recurrence relation with knowledge of the problem structure, the divide and conquer approach applies a recursive approach. The method expresses the number of tiling arrangements in terms of the board width rather than explicitly tracing the grid.
 
-Key components of the approach include:
+The main components of the approach are:
 
 \begin{itemize}
-    \item \textbf{Problem Decomposition}: Break down the $2 \times n$ grid into smaller subproblems
-    \item \textbf{Choice Analysis}: At each column, analyze the two possible domino placement strategies
-    \item \textbf{Recurrence Relation}: Express the solution in terms of smaller instances of the same problem
-    \item \textbf{Base Cases}: Define the fundamental cases that terminate the recursion
+    \item \textbf{Problem Decomposition}: Break the $2 \times n$ grid into smaller subproblems
+\item \textbf{Choice Analysis}: Investigate the two potential domino placement strategies at each column
+\item \textbf{Recurrence Relation}: Define the solution in terms of smaller examples of the same problem
+\item \textbf{Base Cases}: Define the base cases which terminate the recursion
 \end{itemize}
 
 The algorithm takes the leftmost column of the grid and calculates the ways to fill it, then recursively finds the remainder of the subgrid. This minimizes backtracking and explicit management of grid state~\cite{b2, b3}.
@@ -372,9 +372,9 @@ The main function demonstrates how to use the recursive approach:
 
 \subsection{Complexity Analysis}
 
-\textbf{Time Complexity:} The recursive algorithm has exponential time complexity $O(2^n)$ because each function call branches into two recursive calls, creating a binary tree of depth $n$. The actual runtime is determined by the number of overlapping subproblems.
+\textbf{Time Complexity:} The time complexity of $O(2^n)$ is seen for the recursive solution because each function call is divided into two calls recursively, creating a binary tree of depth $n$. The actual running time will vary with the overlapping subproblems.
 
-\textbf{Space Complexity:} The algorithm uses $O(n)$ space for the recursion stack in the worst case, as the maximum depth of recursion is $n$.
+\textbf{Space Complexity:} The maximum space utilized by the algorithm is $O(n)$ for the recursion stack because the deepest recursion is $n$.
 
 \subsection{Step-by-Step Trace for $n = 4$}
 
