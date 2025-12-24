@@ -1,5 +1,8 @@
 # Domino Tiling Problem
 
+> 🏆 **Best Project Award – Algorithms Analysis & Design**  
+> 📄 [View Certificate](https://github.com/mohamedelziat50/Tiling-Problem-MIU/blob/master/Best%20Project%20Certificate%20-%20Algorithms%20Analysis%20%26%20Design.pdf)
+
 This project explores the classic Domino Tiling Problem (Brute Force vs. Divide & Conquer), focusing on tiling a 2×n board with 2×1 dominoes. It is part of a research paper project, with the main algorithm and analysis provided in the included [research paper](Tiling_Problem_MIU.pdf) and [C++ code](Tiling-Problem.cpp).
 
 ## Features
